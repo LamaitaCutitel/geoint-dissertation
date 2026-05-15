@@ -10,27 +10,40 @@ class PlanetAssetChecker:
     def __init__(self):
         self.auth = Auth.from_key(PL_API_KEY)
 
-    async def check_assets(self, scene_id):
+    async def find_scene_with_assets(self, json_path):
+        with open(json_path, "r", encoding="utf-8") as f:
+            scenes = json.load(f)
+
         async with Session(auth=self.auth) as sess:
             client = sess.client("data")
 
-            item = await client.get_item(
-                item_type_id="PSScene",
-                item_id=scene_id
-            )
-            assets = item.get("_links", {})
+            for scene in scenes:
+                scene_id = scene["id"]
 
-            print("\n=== SCENE ASSETS ===")
-            print("Scene ID:", scene_id)
+                assets = await client.list_item_assets(
+                    item_type_id="PSScene",
+                    item_id=scene_id
+                )
 
-            if not assets:
-                print("Nu exista asset-uri disponibile.")
-                return item
+                print("\nScene ID:", scene_id)
 
-            for key, value in assets.items():
-                print(f"{key}: {value}")
+                if not assets:
+                    print("Fara asset-uri disponibile.")
+                    continue
 
-            return item
+                print("Asset-uri gasite:")
+
+                for asset_name, asset_data in assets.items():
+                    print("-", asset_name, "| status:", asset_data.get("status"))
+
+                with open("data/output/scene_with_assets.json", "w", encoding="utf-8") as f:
+                    json.dump(scene, f, indent=4)
+
+                print("\nScena salvata in data/output/scene_with_assets.json")
+                return scene
+
+            print("\nNu a fost gasita nicio scena cu asset-uri disponibile.")
+            return None
 
 
 def run_async(coro):
@@ -38,15 +51,10 @@ def run_async(coro):
 
 
 if __name__ == "__main__":
-    print("=== Verificare asset-uri scenă Planet ===")
-
-    with open("data/output/best_scene_details.json", "r", encoding="utf-8") as f:
-        best_scene = json.load(f)
-
-    scene_id = best_scene["id"]
-
     checker = PlanetAssetChecker()
 
     run_async(
-        checker.check_assets(scene_id)
+        checker.find_scene_with_assets(
+            "data/output/planet_galati_items.json"
+        )
     )
