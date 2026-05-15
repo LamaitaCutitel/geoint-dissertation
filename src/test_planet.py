@@ -28,7 +28,7 @@ items = run_async(
         geometry=geometry,
         start_date=datetime(2024, 1, 1, tzinfo=timezone.utc),
         end_date=datetime(2024, 12, 31, 23, 59, 59, tzinfo=timezone.utc),
-        limit=10
+        limit=100
     )
 )
 
