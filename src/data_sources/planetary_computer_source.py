@@ -1,5 +1,4 @@
 import json
-from datetime import datetime, timezone
 
 import planetary_computer
 from pystac_client import Client
@@ -24,11 +23,16 @@ class PlanetaryComputerSource:
         )
 
         items = list(search.items())
-
         results = []
 
         for item in items:
             signed_item = planetary_computer.sign(item)
+
+            asset_names = list(signed_item.assets.keys())
+
+            asset_hrefs = {}
+            for asset_name, asset in signed_item.assets.items():
+                asset_hrefs[asset_name] = asset.href
 
             results.append({
                 "source": "Microsoft Planetary Computer",
@@ -37,7 +41,8 @@ class PlanetaryComputerSource:
                 "datetime": item.datetime.isoformat() if item.datetime else None,
                 "cloud_cover": item.properties.get("eo:cloud_cover"),
                 "bbox": item.bbox,
-                "assets": list(signed_item.assets.keys())
+                "assets": asset_names,
+                "asset_hrefs": asset_hrefs
             })
 
         return results
